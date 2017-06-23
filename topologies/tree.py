@@ -30,4 +30,24 @@ class TreeTopo(Topo):
         self.addLink(s4, s6)
         self.addLink(s5, s6)
 
+class TestTopo(Topo):
+    
+    def __init__(self):
+        Topo.__init__(self)
+
+        h1 = self.addHost('h1')
+        h2 = self.addHost('h2')
+        h3 = self.addHost('h3')
+        
+        s1 = self.addSwitch('s1')
+        s2 = self.addSwitch('s2')
+        s3 = self.addSwitch('s3')
+
+        self.addLink(h1, s1)
+        self.addLink(s1, s2)
+        self.addLink(s2, s3)
+        self.addLink(s3, h2)
+        self.addLink(s3, h3)
+        
 topos = { 'tree': (lambda: TreeTopo()) }
+topos = { 'test': (lambda: TestTopo()) }
