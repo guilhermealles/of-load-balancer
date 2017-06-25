@@ -1,2 +1,2 @@
 #!/bin/bash
-cp pox/* $HOME/pox/pox/misc
+cp $1/* $HOME/pox/pox/misc
