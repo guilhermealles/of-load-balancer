@@ -50,4 +50,3 @@ class TestTopo(Topo):
         self.addLink(s3, h3)
         
 topos = { 'tree': (lambda: TreeTopo()) }
-topos = { 'test': (lambda: TestTopo()) }

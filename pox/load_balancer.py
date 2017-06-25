@@ -21,10 +21,15 @@ class SwitchOFController (object):
     def resendPacket(self, packetIn, outPort):
         msg = of.ofp_packet_out()
         msg.data = packetIn
-
         action = of.ofp_action_output(port = outPort)
         msg.actions.append(action)
+        self.connection.send(msg)
 
+    def dropPacket(self, packetIn):
+        msg = of.ofp_packet_out()
+        msg.data = packetIn
+        action = of.ofp_action_output(port = of.OFPP_NONE)
+        msg.actions.append(action)
         self.connection.send(msg)
 
     def _handle_PacketIn(self, event):
@@ -85,7 +90,7 @@ class SwitchOFController (object):
             # This is a known switch receiving the same ARP packet, probably due to a loop
             if not lastMile:
                 self.learnDataFromPacket(packet, packetIn, lastMile)
-            # TODO Drop the packet (install flow, probably?)
+            self.dropPacket(packetIn)
 
     def getLastMileAndUpdateGlobalARPEntry(self, arpPacket):
         requestorMAC = arpPacket.hwsrc
