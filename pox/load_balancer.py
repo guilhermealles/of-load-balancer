@@ -59,7 +59,7 @@ class SwitchOFController (object):
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
             outPort = self.learningTable.getRandomReachableThroughPort(destinationMAC)
-            log.debug("Sending packet to MAC ".join(destinationMAC).join(" through port ").join(outPort))
+            log.debug("Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
         else:
             log.error("ERROR: Trying to send a packet to an unknown host")
