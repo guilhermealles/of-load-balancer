@@ -23,7 +23,7 @@ class GlobalARPEntry (object):
             return
         else:
             if ipAddress not in self.globalARPEntry[macAddress]:
-                self.globalARPEntry.append(ipAddress)
+                self.globalARPEntry[macAddress].append(ipAddress)
 
     def isIPKnownForMAC(self, macAddress, ipAddress):
         return self.macExists(macAddress) and ipAddress in self.globalARPEntry[macAddress]
