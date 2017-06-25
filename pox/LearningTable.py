@@ -1,5 +1,6 @@
 from pox.core import core
 from HostProperties import HostProperties
+import random
 
 class LearningTable (object):
 
@@ -46,3 +47,8 @@ class LearningTable (object):
 
     def getFirstReachableThroughPort(self, macAddress):
         return self.getPropertiesForMAC(macAddress).reachableThroughPorts[0]
+
+    def getRandomReachableThroughPort(self, macAddress):
+        listLength = len(self.getPropertiesForMAC(macAddress).reachableThroughPort)
+        randomIndex = random.randrange(0, listLength)
+        return self.getPropertiesForMAC(macAddress).reachableThroughPort[randomIndex]

@@ -58,8 +58,11 @@ class SwitchOFController (object):
         self.learnDataFromPacket(packet, packetIn)
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
-            outPort = self.learningTable.getFirstReachableThroughPort(destinationMAC)
+            outPort = self.learningTable.getRandomReachableThroughPort(destinationMAC)
+            log.debug("Sending packet to MAC ".join(destinationMAC).join(" through port ").join(outPort))
             self.resendPacket(packetIn, outPort)
+        else:
+            log.error("ERROR: Trying to send a packet to an unknown host")
 
     def packetIsARP(self, packet):
         return (packet.find('arp') is not None)
@@ -108,7 +111,7 @@ class SwitchOFController (object):
 
 # Starts the component
 def launch():
-    
+
     def startSwitch(event):
         SwitchOFController(event.connection)
     core.openflow.addListenerByName("ConnectionUp", startSwitch)
