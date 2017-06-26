@@ -11,10 +11,10 @@ class SwitchOFController (object):
 
     def __init__(self, connection):
         self.connection = connection
-        self.switchId = str(connection)
+        self.switchID = str(connection)
         self.learningTable = LearningTable()
         connection.addListeners(self)
-        log.debug("Switch ID " + self.switchId + ": controller started!")
+        log.debug("Switch ID " + self.switchID + ": controller started!")
 
     # Instructs the switch to resent a packet that was sent to the controller.
     # "packet_in" is the OpenFlow pabket that was sent to the controller because of a table-miss
@@ -44,6 +44,7 @@ class SwitchOFController (object):
             self.handleARPRequest(packet, packetIn)
         else:
             log.debug("Controller received regular packet")
+            self.logLearningTable()
             self.actLikeL2Learning(packet, packetIn)
 
     def learnDataFromPacket(self, packet, packetIn, lastMile = False):
@@ -58,7 +59,7 @@ class SwitchOFController (object):
         self.learnDataFromPacket(packet, packetIn)
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
-            outPort = self.learningTable.getRandomReachableThroughPort(destinationMAC)
+            outPort = self.learningTable.getFirstReachableThroughPort(destinationMAC)
             log.debug("Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
         else:
@@ -72,13 +73,11 @@ class SwitchOFController (object):
 
     # Assuming that the packet is guaranteed to be an ARP Request
     def handleARPRequest(self, packet, packetIn):
-        if not self.packetIsARPRequest(packet):
-            log.error("ERROR: Called handleArp on a non-arp packet!!")
-            return
         arpPacket = packet.find('arp')
         lastMile = self.getLastMileAndUpdateGlobalARPEntry(arpPacket)
         sourceMAC = packet.src
         destinationIP = arpPacket.protodst
+        log.info("MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
         if not self.learningTable.macIsKnown(sourceMAC):
             # This is a totally new host to the eyes of this switch
             self.learnDataFromPacket(packet, packetIn, lastMile)
@@ -106,8 +105,20 @@ class SwitchOFController (object):
             globalARPEntry.addUniqueIPForMAC(requestorMAC, requestedIP)
             lastMile = True
         else:
-            lastMile = False
+            if self.learningTable.macIsKnown(requestorMAC):
+                lastMile = self.learningTable.isLastMile(requestorMAC)
+            else:
+                lastMile = False
         return lastMile
+
+    def logLearningTable(self):
+        log.info("<<<<<LEARNING TABLE BEGIN>>>>>, SWITCH "+str(self.switchID))
+        for recordedMAC in self.learningTable.macMap:
+            log.info("==== ["+str(recordedMAC)+"] ====")
+            log.info(">>>> Known IPs: "+str([str(ip) for ip in self.learningTable.macMap[recordedMAC].knownIPs]))
+            log.info(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
+            log.info(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
+        log.info("<<<<<LEARNING TABLE END>>>>>")
 
 # Starts the component
 def launch():
