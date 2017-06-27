@@ -35,15 +35,14 @@ class SwitchOFController (object):
     def _handle_PacketIn(self, event):
         packet = event.parsed
         if not packet.parsed:
-            log.warning("Ignoring incomplete packet")
+            log.warning("Switch ID "+self.switchID+" >>> Ignoring incomplete packet")
             return
 
         packetIn = event.ofp
         if self.packetIsARPRequest(packet):
-            log.debug("Controller received ARP Request")
             self.handleARPRequest(packet, packetIn)
         else:
-            log.debug("Controller received regular packet")
+            log.debug("Switch ID "+self.switchID+" >>> received regular packet")
             self.logLearningTable()
             self.actLikeL2Learning(packet, packetIn)
 
@@ -51,6 +50,8 @@ class SwitchOFController (object):
         sourceMAC = packet.src
         if self.learningTable.macIsKnown(sourceMAC):
             self.learningTable.appendReachableThroughPort(sourceMAC, packetIn.in_port)
+            if lastMile == False and self.learningTable.isLastMile:
+                lastMile = True
             self.learningTable.setLastMile(sourceMAC, lastMile)
         else:
             self.learningTable.createNewEntryWithProperties(sourceMAC, packetIn.in_port, lastMile)
@@ -60,16 +61,22 @@ class SwitchOFController (object):
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
             outPort = self.learningTable.getFirstReachableThroughPort(destinationMAC)
-            log.debug("Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
+            log.debug("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
         else:
-            log.error("ERROR: Trying to send a packet to an unknown host")
+            log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
 
     def packetIsARP(self, packet):
         return (packet.find('arp') is not None)
 
     def packetIsARPRequest (self, packet):
-        return self.packetIsARP(packet) and packet.find('arp').opcode == 1
+        if self.packetIsARP(packet):
+            if packet.find('arp').opcode == 1:
+                log.info("Switch ID "+self.switchID+" received ARP Request")
+                return True
+            else:
+                log.info("Switch ID "+self.switchID+" received ARP Reply")
+        return False
 
     # Assuming that the packet is guaranteed to be an ARP Request
     def handleARPRequest(self, packet, packetIn):
@@ -77,7 +84,7 @@ class SwitchOFController (object):
         lastMile = self.getLastMileAndUpdateGlobalARPEntry(arpPacket)
         sourceMAC = packet.src
         destinationIP = arpPacket.protodst
-        log.info("MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
+        log.info("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
         if not self.learningTable.macIsKnown(sourceMAC):
             # This is a totally new host to the eyes of this switch
             self.learnDataFromPacket(packet, packetIn, lastMile)
@@ -112,7 +119,7 @@ class SwitchOFController (object):
         return lastMile
 
     def logLearningTable(self):
-        log.info("<<<<<LEARNING TABLE BEGIN>>>>>, SWITCH "+str(self.switchID))
+        log.info("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>"+str(self.switchID))
         for recordedMAC in self.learningTable.macMap:
             log.info("==== ["+str(recordedMAC)+"] ====")
             log.info(">>>> Known IPs: "+str([str(ip) for ip in self.learningTable.macMap[recordedMAC].knownIPs]))
