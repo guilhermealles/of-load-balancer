@@ -48,8 +48,10 @@ class LearningTable (object):
     def getFirstReachableThroughPort(self, macAddress):
         return self.getPropertiesForMAC(macAddress).reachableThroughPorts[0]
 
-    def getRandomReachableThroughPort(self, macAddress):
-        return random.choice(self.getPropertiesForMAC(macAddress).reachableThroughPorts)
+    def getRandomReachableThroughPort(self, macAddress, excludePort):
+        candidatePorts = list(self.getPropertiesForMAC(macAddress).reachableThroughPorts)
+        candidatePorts.remove(excludePort)
+        return random.choice(candidatePorts)
 
     def getAnyPortToReachHost(self, macAddress):
         return self.getRandomReachableThroughPort(macAddress)
