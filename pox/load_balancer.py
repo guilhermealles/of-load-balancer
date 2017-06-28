@@ -39,8 +39,8 @@ class SwitchOFController (object):
             return
 
         packetIn = event.ofp
-        if self.packetIsARPRequest(packet):
-            self.handleARPRequest(packet, packetIn)
+        if self.packetIsARP(packet):
+            self.handleARPPacket(packet, packetIn)
         else:
             log.debug("Switch ID "+self.switchID+" >>> received regular packet")
             self.logLearningTable()
@@ -57,7 +57,7 @@ class SwitchOFController (object):
             self.learningTable.createNewEntryWithProperties(sourceMAC, packetIn.in_port, lastMile)
 
     def actLikeL2Learning(self, packet, packetIn):
-        self.learnDataFromPacket(packet, packetIn)
+        # self.learnDataFromPacket(packet, packetIn)
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
             outPort = self.learningTable.getFirstReachableThroughPort(destinationMAC)
@@ -69,19 +69,31 @@ class SwitchOFController (object):
     def packetIsARP(self, packet):
         return (packet.find('arp') is not None)
 
-    def packetIsARPRequest (self, packet):
-        if self.packetIsARP(packet):
-            if packet.find('arp').opcode == 1:
-                log.info("Switch ID "+self.switchID+" received ARP Request")
-                return True
-            else:
-                log.info("Switch ID "+self.switchID+" received ARP Reply")
-        return False
+    def packetIsARPRequest (self, arpPacket):
+        return arpPacket.opcode == 1
 
-    # Assuming that the packet is guaranteed to be an ARP Request
+    def handleARPPacket(self, packet, packetIn):
+        arpPacket = packet.find('arp')
+        if self.packetIsARPRequest(arpPacket):
+            log.info("Switch ID "+self.switchID+" received ARP Request")
+            self.handleARPRequest(packet, packetIn)
+        else:
+            log.info("Switch ID "+self.switchID+" received ARP Request")
+            self.handleARPReply(packet, packetIn)
+
+    def handleARPReply(self, packet, packetIn):
+        arpPacket = packet.find('arp')
+        lastMile = globalARPEntry.isNewARPFlow(arpPacket)
+        globalARPEntry.update(arpPacket)
+        self.learnDataFromPacket(packet, packetIn, lastMile)
+        outPort = self.learningTable.getAnyPortToReachHost(packet.dst)
+        log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(destinationMAC) + " on port " + str(outPort))
+        self.resendPacket(packetIn, outPort)
+
     def handleARPRequest(self, packet, packetIn):
         arpPacket = packet.find('arp')
-        lastMile = self.getLastMileAndUpdateGlobalARPEntry(arpPacket)
+        lastMile = globalARPEntry.isNewARPFlow(arpPacket)
+        globalARPEntry.update(arpPacket)
         sourceMAC = packet.src
         destinationIP = arpPacket.protodst
         log.info("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))

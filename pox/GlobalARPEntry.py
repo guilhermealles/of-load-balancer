@@ -27,3 +27,16 @@ class GlobalARPEntry (object):
 
     def isIPKnownForMAC(self, macAddress, ipAddress):
         return self.macExists(macAddress) and ipAddress in self.globalARPEntry[macAddress]
+
+    def isNewARPFlow(self, arpPacket):
+        requestorMAC = arpPacket.hwsrc
+        requestedIP = arpPacket.protodst
+        return self.macExists(requestorMAC) or self.isIPKnownForMAC(requestorMAC, requestedIP)
+
+    def update(self, arpPacket):
+        if self.isNewARPFlow(arpPacket):
+            requestorMAC = arpPacket.hwsrc
+            requestedIP = arpPacket.protodst
+            if not self.macExists(requestorMAC):
+                self.createNewEntryForMAC(requestorMAC)
+            self.addUniqueIPForMAC(requestorMAC, requestedIP)
