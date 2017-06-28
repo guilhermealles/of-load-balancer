@@ -78,7 +78,7 @@ class SwitchOFController (object):
             log.info("Switch ID "+self.switchID+" received ARP Request")
             self.handleARPRequest(packet, packetIn)
         else:
-            log.info("Switch ID "+self.switchID+" received ARP Request")
+            log.info("Switch ID "+self.switchID+" received ARP Reply")
             self.handleARPReply(packet, packetIn)
 
     def handleARPReply(self, packet, packetIn):
@@ -87,7 +87,7 @@ class SwitchOFController (object):
         globalARPEntry.update(arpPacket)
         self.learnDataFromPacket(packet, packetIn, lastMile)
         outPort = self.learningTable.getAnyPortToReachHost(packet.dst)
-        log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(destinationMAC) + " on port " + str(outPort))
+        log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(packet.dst) + " on port " + str(outPort))
         self.resendPacket(packetIn, outPort)
 
     def handleARPRequest(self, packet, packetIn):
