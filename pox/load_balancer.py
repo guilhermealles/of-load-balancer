@@ -59,7 +59,6 @@ class SwitchOFController (object):
             self.handleARPPacket(packet, packetIn)
         else:
             log.debug("Switch ID "+self.switchID+" >>> received regular packet")
-            self.logLearningTable()
             self.actLikeL2Learning(packet, packetIn)
 
     def handleARPPacket(self, packet, packetIn):
@@ -108,6 +107,8 @@ class SwitchOFController (object):
     def actLikeL2Learning(self, packet, packetIn):
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
+            log.debug("Switch ID "+self.switchID+" >>> Deciding path to "+str(destinationMAC)+" according to the following table:")
+            self.logLearningTable()
             outPort = self.learningTable.getAnyPortToReachHost(destinationMAC)
             log.info("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
@@ -115,7 +116,7 @@ class SwitchOFController (object):
             log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
 
     def logLearningTable(self):
-        log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>"+str(self.switchID))
+        log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>")
         for recordedMAC in self.learningTable.macMap:
             log.debug("==== ["+str(recordedMAC)+"] ====")
             #log.debug(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
