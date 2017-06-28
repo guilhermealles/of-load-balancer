@@ -76,7 +76,7 @@ class SwitchOFController (object):
         log.debug("Switch ID "+self.switchID+" >>> ARP Reply with lastMile = "+str(lastMile))
         globalARPEntry.update(arpPacket)
         self.learnDataFromPacket(packet, packetIn, lastMile)
-        outPort = self.learningTable.getAnyPortToReachHost(packet.dst)
+        outPort = self.learningTable.getAnyPortToReachHost(packet.dst, packetIn.in_port)
         log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(packet.dst) + " on port " + str(outPort))
         self.resendPacket(packetIn, outPort)
 
