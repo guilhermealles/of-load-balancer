@@ -100,7 +100,7 @@ class SwitchOFController (object):
             self.resendPacket(packetIn, of.OFPP_ALL)
         else:
             # This is a known switch receiving the same ARP packet, probably due to a loop
-            if not lastMile:
+            if not self.learningTable.isLastMile(sourceMAC):
                 self.learnDataFromPacket(packet, packetIn, lastMile)
             self.dropPacket(packetIn)
 
