@@ -33,5 +33,5 @@ class HostProperties (object):
     def _updateIPsTimeout(self, ipAddress):
         if ipAddress in self._knownIPsTimeout:
             now = datetime.datetime.now()
-            if (now - self.knownIPsTimeout[ipAddress]).seconds >= 1:
-                del self.knownIPsTimeout[ipAddress]
+            if (now - self._knownIPsTimeout[ipAddress]).seconds >= 1:
+                del self._knownIPsTimeout[ipAddress]

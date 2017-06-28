@@ -31,7 +31,7 @@ class GlobalARPEntry (object):
     def isNewARPFlow(self, arpPacket):
         requestorMAC = arpPacket.hwsrc
         requestedIP = arpPacket.protodst
-        return self.macExists(requestorMAC) or self.isIPKnownForMAC(requestorMAC, requestedIP)
+        return not self.macExists(requestorMAC) or not self.isIPKnownForMAC(requestorMAC, requestedIP)
 
     def update(self, arpPacket):
         if self.isNewARPFlow(arpPacket):

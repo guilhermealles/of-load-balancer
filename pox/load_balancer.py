@@ -136,7 +136,7 @@ class SwitchOFController (object):
         log.info("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>"+str(self.switchID))
         for recordedMAC in self.learningTable.macMap:
             log.info("==== ["+str(recordedMAC)+"] ====")
-            log.info(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
+            #log.info(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
             log.info(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
             log.info(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
         log.info("<<<<<LEARNING TABLE END>>>>>")
