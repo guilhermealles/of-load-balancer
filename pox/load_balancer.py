@@ -36,7 +36,7 @@ class SwitchOFController (object):
         sourceMAC = packet.src
         if self.learningTable.macIsKnown(sourceMAC):
             self.learningTable.appendReachableThroughPort(sourceMAC, packetIn.in_port)
-            if lastMile == False and self.learningTable.isLastMile:
+            if lastMile == False and self.learningTable.isLastMile(sourceMAC):
                 lastMile = True
             self.learningTable.setLastMile(sourceMAC, lastMile)
         else:
