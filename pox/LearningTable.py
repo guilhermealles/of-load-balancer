@@ -52,4 +52,4 @@ class LearningTable (object):
         return random.choice(self.getPropertiesForMAC(macAddress).reachableThroughPorts)
 
     def getAnyPortToReachHost(self, macAddress):
-        return self.getRandomReachableThroughPort(macAddress)
+        return self.getFirstReachableThroughPort(macAddress)
