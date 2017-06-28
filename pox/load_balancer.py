@@ -57,11 +57,10 @@ class SwitchOFController (object):
             self.learningTable.createNewEntryWithProperties(sourceMAC, packetIn.in_port, lastMile)
 
     def actLikeL2Learning(self, packet, packetIn):
-        # self.learnDataFromPacket(packet, packetIn)
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
-            outPort = self.learningTable.getFirstReachableThroughPort(destinationMAC)
-            log.debug("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
+            outPort = self.learningTable.getAnyPortToReachHost(destinationMAC)
+            log.info("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
         else:
             log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
@@ -75,16 +74,16 @@ class SwitchOFController (object):
     def handleARPPacket(self, packet, packetIn):
         arpPacket = packet.find('arp')
         if self.packetIsARPRequest(arpPacket):
-            log.info("Switch ID "+self.switchID+" >>> received ARP Request")
+            log.debug("Switch ID "+self.switchID+" >>> received ARP Request")
             self.handleARPRequest(packet, packetIn)
         else:
-            log.info("Switch ID "+self.switchID+" >>> received ARP Reply")
+            log.debug("Switch ID "+self.switchID+" >>> received ARP Reply")
             self.handleARPReply(packet, packetIn)
 
     def handleARPReply(self, packet, packetIn):
         arpPacket = packet.find('arp')
         lastMile = globalARPEntry.isNewARPFlow(arpPacket)
-        log.info("Switch ID "+self.switchID+" >>> ARP Reply with lastMile = "+str(lastMile))
+        log.debug("Switch ID "+self.switchID+" >>> ARP Reply with lastMile = "+str(lastMile))
         globalARPEntry.update(arpPacket)
         self.learnDataFromPacket(packet, packetIn, lastMile)
         outPort = self.learningTable.getAnyPortToReachHost(packet.dst)
@@ -94,11 +93,11 @@ class SwitchOFController (object):
     def handleARPRequest(self, packet, packetIn):
         arpPacket = packet.find('arp')
         lastMile = globalARPEntry.isNewARPFlow(arpPacket)
-        log.info("Switch ID "+self.switchID+" >>> ARP Request with lastMile = "+str(lastMile))
+        log.debug("Switch ID "+self.switchID+" >>> ARP Request with lastMile = "+str(lastMile))
         globalARPEntry.update(arpPacket)
         sourceMAC = packet.src
         destinationIP = arpPacket.protodst
-        log.info("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
+        log.debug("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
         if not self.learningTable.macIsKnown(sourceMAC):
             # This is a totally new host to the eyes of this switch
             self.learnDataFromPacket(packet, packetIn, lastMile)
@@ -133,13 +132,13 @@ class SwitchOFController (object):
         return lastMile
 
     def logLearningTable(self):
-        log.info("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>"+str(self.switchID))
+        log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>"+str(self.switchID))
         for recordedMAC in self.learningTable.macMap:
-            log.info("==== ["+str(recordedMAC)+"] ====")
-            #log.info(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
-            log.info(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
-            log.info(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
-        log.info("<<<<<LEARNING TABLE END>>>>>")
+            log.debug("==== ["+str(recordedMAC)+"] ====")
+            #log.debug(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
+            log.debug(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
+            log.debug(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
+        log.debug("<<<<<LEARNING TABLE END>>>>>")
 
 # Starts the component
 def launch():
