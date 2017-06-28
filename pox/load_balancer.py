@@ -109,7 +109,7 @@ class SwitchOFController (object):
         if self.learningTable.macIsKnown(destinationMAC):
             log.debug("Switch ID "+self.switchID+" >>> Deciding path to "+str(destinationMAC)+" according to the following table:")
             self.logLearningTable()
-            outPort = self.learningTable.getAnyPortToReachHost(destinationMAC)
+            outPort = self.learningTable.getAnyPortToReachHost(destinationMAC, packetIn.in_port)
             log.info("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
         else:
