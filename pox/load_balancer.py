@@ -64,10 +64,10 @@ class SwitchOFController (object):
     def handleARPPacket(self, packet, packetIn):
         arpPacket = packet.find('arp')
         if self.packetIsARPRequest(arpPacket):
-            log.debug("Switch ID "+self.switchID+" >>> received ARP Request")
+            log.debug("Switch ID "+self.switchID+" >>> received ARP Request from port "+str(packetIn.in_port))
             self.handleARPRequest(packet, packetIn)
         else:
-            log.debug("Switch ID "+self.switchID+" >>> received ARP Reply")
+            log.debug("Switch ID "+self.switchID+" >>> received ARP Reply from port "+str(packetIn.in_port))
             self.handleARPReply(packet, packetIn)
 
     def handleARPReply(self, packet, packetIn):
