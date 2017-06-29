@@ -32,16 +32,6 @@ class SwitchOFController (object):
         msg.actions.append(action)
         self.connection.send(msg)
 
-    def learnDataFromPacket(self, packet, packetIn, lastMile = False):
-        sourceMAC = packet.src
-        if self.learningTable.macIsKnown(sourceMAC):
-            self.learningTable.appendReachableThroughPort(sourceMAC, packetIn.in_port)
-            if lastMile == False and self.learningTable.isLastMile(sourceMAC):
-                lastMile = True
-            self.learningTable.setLastMile(sourceMAC, lastMile)
-        else:
-            self.learningTable.createNewEntryWithProperties(sourceMAC, packetIn.in_port, lastMile)
-
     def packetIsARP(self, packet):
         return (packet.find('arp') is not None)
 
@@ -53,7 +43,6 @@ class SwitchOFController (object):
         if not packet.parsed:
             log.warning("Switch ID "+self.switchID+" >>> Ignoring incomplete packet")
             return
-
         packetIn = event.ofp
         if self.packetIsARP(packet):
             self.handleARPPacket(packet, packetIn)
@@ -75,7 +64,7 @@ class SwitchOFController (object):
         lastMile = globalARPEntry.isNewARPFlow(arpPacket)
         log.debug("Switch ID "+self.switchID+" >>> ARP Reply with lastMile = "+str(lastMile))
         globalARPEntry.update(arpPacket)
-        self.learnDataFromPacket(packet, packetIn, lastMile)
+        self.learningTable.learnDataFromPacket(packet, packetIn, lastMile)
         outPort = self.learningTable.getAnyPortToReachHost(packet.dst, packetIn.in_port)
         log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(packet.dst) + " on port " + str(outPort))
         self.resendPacket(packetIn, outPort)
@@ -90,18 +79,18 @@ class SwitchOFController (object):
         log.debug("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
         if not self.learningTable.macIsKnown(sourceMAC):
             # This is a totally new host to the eyes of this switch
-            self.learnDataFromPacket(packet, packetIn, lastMile)
+            self.learningTable.learnDataFromPacket(packet, packetIn, lastMile)
             self.learningTable.appendKnownIPForMAC(sourceMAC, destinationIP)
             self.resendPacket(packetIn, of.OFPP_ALL)
         elif not self.learningTable.isIPKnownForMAC(sourceMAC, destinationIP):
             # This is a known host making a brand new ARP Request
-            self.learnDataFromPacket(packet, packetIn, lastMile)
+            self.learningTable.learnDataFromPacket(packet, packetIn, lastMile)
             self.learningTable.appendKnownIPForMAC(sourceMAC, destinationIP)
             self.resendPacket(packetIn, of.OFPP_ALL)
         else:
             # This is a known switch receiving the same ARP packet, probably due to a loop
             if not self.learningTable.isLastMile(sourceMAC):
-                self.learnDataFromPacket(packet, packetIn, lastMile)
+                self.learningTable.learnDataFromPacket(packet, packetIn, lastMile)
             self.dropPacket(packetIn)
 
     def actLikeL2Learning(self, packet, packetIn):

@@ -30,6 +30,16 @@ class LearningTable (object):
         hostProperties.addUniquePort(reachableThroughPort)
         hostProperties.lastMile = lastMile
 
+    def learnDataFromPacket(self, packet, packetIn, lastMile = False):
+        sourceMAC = packet.dst
+        if self.macIsKnown(sourceMAC):
+            self.appendReachableThroughPort(sourceMAC, packetIn.in_port)
+            if lastMile == False and self.isLastMile(sourceMAC):
+                lastMile = True
+            self.setLastMile(sourceMAC, lastMile)
+        else:
+            self.createNewEntryWithProperties(sourceMAC, packetIn.in_port, lastMile)
+
     def appendKnownIPForMAC(self, macAddress, ipAddress):
         self.getPropertiesForMAC(macAddress).addUniqueIP(ipAddress)
 
