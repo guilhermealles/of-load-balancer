@@ -112,6 +112,7 @@ class SwitchOFController (object):
             outPort = self.learningTable.getAnyPortToReachHost(destinationMAC, packetIn.in_port)
             log.info("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
+            self.installForwardingFlow(destinationMAC, outPort)
         else:
             log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
 
