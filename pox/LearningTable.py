@@ -61,9 +61,10 @@ class LearningTable (object):
     def getUnusedPortToHost(self, macAddress, excludePort):
         candidatePorts = self.getCandidatePorts(macAddress, excludePort)
         lastPort = self.getPropertiesForMAC(macAddress).lastPort
-        if len(candidatePorts) > 1 and (lastPort not None) and (lastPort in candidatePorts):
+        if len(candidatePorts) > 1 and (lastPort != None) and (lastPort in candidatePorts):
             candidatePorts.remove(lastPort)
         chosenPort = random.choice(candidatePorts)
+        return chosenPort
 
     def getAnyPortToReachHost(self, macAddress, excludePort):
         return self.getUnusedPortToHost(macAddress, excludePort)
