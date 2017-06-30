@@ -45,14 +45,25 @@ class LearningTable (object):
     def isLastMile(self, macAddress):
         return self.getPropertiesForMAC(macAddress).lastMile
 
-    def getFirstReachableThroughPort(self, macAddress):
-        return self.getPropertiesForMAC(macAddress).reachableThroughPorts[0]
-
-    def getRandomReachableThroughPort(self, macAddress, excludePort):
+    def getCandidatePorts(self, macAddress, excludePort):
         candidatePorts = list(self.getPropertiesForMAC(macAddress).reachableThroughPorts)
         if excludePort in candidatePorts:
             candidatePorts.remove(excludePort)
+        return candidatePorts
+
+    def getFirstReachableThroughPort(self, macAddress, excludePort):
+        return self.getCandidatePorts(macAddress, excludePort)[0]
+
+    def getRandomReachableThroughPort(self, macAddress, excludePort):
+        candidatePorts = self.getCandidatePorts(macAddress, excludePort)
         return random.choice(candidatePorts)
 
+    def getUnusedPortToHost(self, macAddress, excludePort):
+        candidatePorts = self.getCandidatePorts(macAddress, excludePort)
+        lastPort = self.getPropertiesForMAC(macAddress).lastPort
+        if len(candidatePorts) > 1 and (lastPort not None) and (lastPort in candidatePorts):
+            candidatePorts.remove(lastPort)
+        chosenPort = random.choice(candidatePorts)
+
     def getAnyPortToReachHost(self, macAddress, excludePort):
-        return self.getRandomReachableThroughPort(macAddress, excludePort)
+        return self.getUnusedPortToHost(macAddress, excludePort)
