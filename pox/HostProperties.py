@@ -6,6 +6,7 @@ class HostProperties (object):
     def __init__(self):
         self.log = core.getLogger()
         self.reachableThroughPorts = []
+        self.lastPort = None
         self._knownIPsTimeout = {}
         self.lastMile = False
 
