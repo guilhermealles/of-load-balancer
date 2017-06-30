@@ -115,6 +115,16 @@ class SwitchOFController (object):
         else:
             log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
 
+    def installForwardingFlow(self, destinationMAC, outPort):
+        log.debug("Switch ID "+self.switchID+" >>> installing forwarding flow...")
+        flowModMessage = of.ofp_flow_mod()
+        flowModMessage.idle_timeout = 1
+        flowModMessage.hard_timeout = 10
+        flowModMessage.match.dl_dst = destinationMAC
+        flowModMessage.actions.append(of.ofp_action_output(port=outPort))
+        self.connection.send(flowModMessage)
+
+
     def logLearningTable(self):
         log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>")
         for recordedMAC in self.learningTable.macMap:
