@@ -14,7 +14,7 @@ class SwitchOFController (object):
         self.switchID = str(connection)
         self.learningTable = LearningTable()
         connection.addListeners(self)
-        log.debug("Switch ID " + self.switchID + ": controller started!")
+        #log.debug("Switch ID " + self.switchID + ": controller started!")
 
     # Instructs the switch to resent a packet that was sent to the controller.
     # "packet_in" is the OpenFlow pabket that was sent to the controller because of a table-miss
@@ -51,43 +51,43 @@ class SwitchOFController (object):
     def _handle_PacketIn(self, event):
         packet = event.parsed
         if not packet.parsed:
-            log.warning("Switch ID "+self.switchID+" >>> Ignoring incomplete packet")
+            #log.warning("Switch ID "+self.switchID+" >>> Ignoring incomplete packet")
             return
 
         packetIn = event.ofp
         if self.packetIsARP(packet):
             self.handleARPPacket(packet, packetIn)
         else:
-            log.debug("Switch ID "+self.switchID+" >>> received regular packet")
+            #log.debug("Switch ID "+self.switchID+" >>> received regular packet")
             self.actLikeL2Learning(packet, packetIn)
 
     def handleARPPacket(self, packet, packetIn):
         arpPacket = packet.find('arp')
         if self.packetIsARPRequest(arpPacket):
-            log.debug("Switch ID "+self.switchID+" >>> received ARP Request from port "+str(packetIn.in_port))
+            #log.debug("Switch ID "+self.switchID+" >>> received ARP Request from port "+str(packetIn.in_port))
             self.handleARPRequest(packet, packetIn)
         else:
-            log.debug("Switch ID "+self.switchID+" >>> received ARP Reply from port "+str(packetIn.in_port))
+            #log.debug("Switch ID "+self.switchID+" >>> received ARP Reply from port "+str(packetIn.in_port))
             self.handleARPReply(packet, packetIn)
 
     def handleARPReply(self, packet, packetIn):
         arpPacket = packet.find('arp')
         lastMile = globalARPEntry.isNewARPFlow(arpPacket)
-        log.debug("Switch ID "+self.switchID+" >>> ARP Reply with lastMile = "+str(lastMile))
+        #log.debug("Switch ID "+self.switchID+" >>> ARP Reply with lastMile = "+str(lastMile))
         globalARPEntry.update(arpPacket)
         self.learnDataFromPacket(packet, packetIn, lastMile)
         outPort = self.learningTable.getAnyPortToReachHost(packet.dst, packetIn.in_port)
-        log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(packet.dst) + " on port " + str(outPort))
+        #log.debug("Switch ID "+self.switchID+" >>> Sending ARP Reply to " + str(packet.dst) + " on port " + str(outPort))
         self.resendPacket(packetIn, outPort)
 
     def handleARPRequest(self, packet, packetIn):
         arpPacket = packet.find('arp')
         lastMile = globalARPEntry.isNewARPFlow(arpPacket)
-        log.debug("Switch ID "+self.switchID+" >>> ARP Request with lastMile = "+str(lastMile))
+        #log.debug("Switch ID "+self.switchID+" >>> ARP Request with lastMile = "+str(lastMile))
         globalARPEntry.update(arpPacket)
         sourceMAC = packet.src
         destinationIP = arpPacket.protodst
-        log.debug("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
+        #log.debug("Switch ID "+self.switchID+" >>> MAC "+str(sourceMAC)+" asking who has IP "+str(destinationIP))
         if not self.learningTable.macIsKnown(sourceMAC):
             # This is a totally new host to the eyes of this switch
             self.learnDataFromPacket(packet, packetIn, lastMile)
@@ -107,22 +107,21 @@ class SwitchOFController (object):
     def actLikeL2Learning(self, packet, packetIn):
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
-            log.debug("Switch ID "+self.switchID+" >>> Deciding path to "+str(destinationMAC)+" according to the following table:")
+            #log.debug("Switch ID "+self.switchID+" >>> Deciding path to "+str(destinationMAC)+" according to the following table:")
             self.logLearningTable()
             outPort = self.learningTable.getAnyPortToReachHost(destinationMAC, packetIn.in_port)
-            log.info("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
+            #log.info("Switch ID "+self.switchID+" >>> Sending packet to MAC " + str(destinationMAC) + " through port " + str(outPort))
             self.resendPacket(packetIn, outPort)
         else:
-            log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
+            #log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
 
     def logLearningTable(self):
-        log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>")
+        #log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>")
         for recordedMAC in self.learningTable.macMap:
-            log.debug("==== ["+str(recordedMAC)+"] ====")
-            #log.debug(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
-            log.debug(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
-            log.debug(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
-        log.debug("<<<<<LEARNING TABLE END>>>>>")
+            #log.debug("==== ["+str(recordedMAC)+"] ====")
+            #log.debug(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
+            #log.debug(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
+        #log.debug("<<<<<LEARNING TABLE END>>>>>")
 
 # Starts the component
 def launch():
