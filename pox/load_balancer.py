@@ -116,8 +116,9 @@ class SwitchOFController (object):
             #log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to an unknown host")
 
     def logLearningTable(self):
+        pass
         #log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>")
-        for recordedMAC in self.learningTable.macMap:
+        #for recordedMAC in self.learningTable.macMap:
             #log.debug("==== ["+str(recordedMAC)+"] ====")
             #log.debug(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
             #log.debug(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
