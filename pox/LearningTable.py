@@ -68,4 +68,4 @@ class LearningTable (object):
         return chosenPort
 
     def getAnyPortToReachHost(self, macAddress, excludePort):
-        return self.getFirstReachableThroughPort(macAddress, excludePort)
+        return self.getUnusedPortToHost(macAddress, excludePort)
