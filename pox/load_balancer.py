@@ -117,10 +117,14 @@ class SwitchOFController (object):
             log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to unknown host " + str(destinationMAC))
 
     def installForwardingFlow(self, sourceMAC, destinationMAC, outPort):
-        log.debug("Switch ID "+self.switchID+" >>> installing forwarding flow...")
+        log.info("Switch ID "+self.switchID+" >>> installing forwarding flow...")
         flowModMessage = of.ofp_flow_mod()
-        flowModMessage.idle_timeout = 1
-        flowModMessage.hard_timeout = 10
+        if self.learningTable.isLastMile(destinationMAC):
+            flowModMessage.idle_timeout = 300
+            flowModMessage.hard_timeout = 600
+        else:
+            flowModMessage.idle_timeout = 1
+            flowModMessage.hard_timeout = 3
         flowModMessage.match.dl_src = sourceMAC
         flowModMessage.match.dl_dst = destinationMAC
         flowModMessage.actions.append(of.ofp_action_output(port=outPort))
