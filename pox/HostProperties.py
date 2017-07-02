@@ -23,14 +23,6 @@ class HostProperties (object):
         self._updateIPsTimeout(ipAddress)
         return ipAddress in self._knownIPsTimeout
 
-    def getKnownIPsList(self):
-        ipList = []
-        for ip in self._knownIPsTimeout:
-            self._updateIPsTimeout(ip)
-            if ip in self._knownIPsTimeout:
-                ipList.append(ip)
-        return ipList
-
     def _updateIPsTimeout(self, ipAddress):
         if ipAddress in self._knownIPsTimeout:
             now = datetime.datetime.now()

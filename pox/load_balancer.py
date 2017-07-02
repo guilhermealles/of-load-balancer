@@ -17,7 +17,7 @@ class SwitchOFController (object):
         log.debug("Switch ID " + self.switchID + ": controller started!")
 
     # Instructs the switch to resent a packet that was sent to the controller.
-    # "packet_in" is the OpenFlow pabket that was sent to the controller because of a table-miss
+    # "packet_in" is the OpenFlow pabket that was sent to the controller because of a flow-table miss
     def resendPacket(self, packetIn, outPort):
         msg = of.ofp_packet_out()
         msg.data = packetIn
@@ -25,6 +25,7 @@ class SwitchOFController (object):
         msg.actions.append(action)
         self.connection.send(msg)
 
+    # Instructs the switch to drop the packet that was sent to the controller
     def dropPacket(self, packetIn):
         msg = of.ofp_packet_out()
         msg.data = packetIn
@@ -32,6 +33,8 @@ class SwitchOFController (object):
         msg.actions.append(action)
         self.connection.send(msg)
 
+    # Adds data to the learning table of this switch. The data is obtained from the
+    # incoming packet
     def learnDataFromPacket(self, packet, packetIn, lastMile = False):
         sourceMAC = packet.src
         if self.learningTable.macIsKnown(sourceMAC):
@@ -48,12 +51,12 @@ class SwitchOFController (object):
     def packetIsARPRequest (self, arpPacket):
         return arpPacket.opcode == 1
 
+    # Callback function for when a packet reaches the controller
     def _handle_PacketIn(self, event):
         packet = event.parsed
         if not packet.parsed:
             log.warning("Switch ID "+self.switchID+" >>> Ignoring incomplete packet")
             return
-
         packetIn = event.ofp
         if self.packetIsARP(packet):
             self.handleARPPacket(packet, packetIn)
@@ -104,6 +107,7 @@ class SwitchOFController (object):
                 self.learnDataFromPacket(packet, packetIn, lastMile)
             self.dropPacket(packetIn)
 
+    # Decides what to do with the incoming packet based on the learning table
     def actLikeL2Learning(self, packet, packetIn):
         destinationMAC = packet.dst
         if self.learningTable.macIsKnown(destinationMAC):
@@ -116,13 +120,20 @@ class SwitchOFController (object):
         else:
             log.error("Switch ID "+self.switchID+" >>> ERROR: Trying to send a packet to unknown host " + str(destinationMAC))
 
+    # Installs a temporary flow entry on the switch, to enhance performance and
+    # avoid unnecessary controller interaction.
     def installForwardingFlow(self, sourceMAC, destinationMAC, outPort):
         log.info("Switch ID "+self.switchID+" >>> installing forwarding flow...")
         flowModMessage = of.ofp_flow_mod()
         if self.learningTable.isLastMile(destinationMAC):
+            # Sets a huge timeout for last mile links, because they are
+            # not going to change. The timeout is not infinite to keep the system
+            # somewhat stateless
             flowModMessage.idle_timeout = 300
             flowModMessage.hard_timeout = 600
         else:
+            # For data flows that can be load-balanced, the timeout cam be configured.
+            # 1 and 3 seconds seems to be good enough in my informal tests.
             flowModMessage.idle_timeout = 1
             flowModMessage.hard_timeout = 3
         flowModMessage.match.dl_src = sourceMAC
@@ -130,18 +141,17 @@ class SwitchOFController (object):
         flowModMessage.actions.append(of.ofp_action_output(port=outPort))
         self.connection.send(flowModMessage)
 
+    # For debugging reasons only
     def logLearningTable(self):
         log.debug("Switch ID "+self.switchID+" >>> <<<<<LEARNING TABLE BEGIN>>>>>")
         for recordedMAC in self.learningTable.macMap:
             log.debug("==== ["+str(recordedMAC)+"] ====")
-            #log.debug(">>>> Known IPs: "+str(self.learningTable.macMap[recordedMAC].getKnownIPsList()))
             log.debug(">>>> Host reachable through ports: "+str([str(port) for port in self.learningTable.macMap[recordedMAC].reachableThroughPorts]))
             log.debug(">>>> Last mile: "+str(self.learningTable.macMap[recordedMAC].lastMile))
         log.debug("<<<<<LEARNING TABLE END>>>>>")
 
 # Starts the component
 def launch():
-
     def startSwitch(event):
         SwitchOFController(event.connection)
     core.openflow.addListenerByName("ConnectionUp", startSwitch)
